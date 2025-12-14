@@ -1,0 +1,9 @@
+{
+  "name": "Sparlo.ai",
+  "description": "Sparlo.ai - Akıllı Tasarruf Platformu",
+  "requestFramePermissions": [
+    "microphone",
+    "camera",
+    "geolocation"
+  ]
+}

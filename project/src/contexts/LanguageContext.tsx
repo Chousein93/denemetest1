@@ -1417,7 +1417,7 @@ const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   };
 
   const t = (key: string, params?: Record<string, string | number>): string => {
-    let translation = translations[language][key as keyof typeof translations[typeof language]] || key;
+    let translation = (translations[language] as any)[key] || key;
     
     if (params) {
       Object.entries(params).forEach(([paramKey, paramValue]) => {

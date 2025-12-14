@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Menu, X, User, Settings } from 'lucide-react';
+import { Menu, X, Settings } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import Login from './Login';
 import Register from './Register';
-import UserProfile from './UserProfile.js';
+import UserProfile from './UserProfile';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -16,13 +16,11 @@ const Header = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Check for logged-in user on component mount
   useEffect(() => {
     const checkUserData = () => {
       const stored = localStorage.getItem('userData') || sessionStorage.getItem('userData');
       if (stored) {
         const data = JSON.parse(stored);
-        // Create display name in "FirstName LastInitial." format
         const names = data.name.split(' ');
         const displayName = names.length >= 2
           ? `${names[0]} ${names[names.length - 1][0]}.`
@@ -38,9 +36,7 @@ const Header = () => {
     };
 
     checkUserData();
-    // Listen for storage changes (when user logs in)
     window.addEventListener('storage', checkUserData);
-    // Listen for manual login/logout events
     window.addEventListener('userStatusChange', checkUserData);
 
     return () => {
@@ -81,15 +77,10 @@ const Header = () => {
     localStorage.removeItem('userData');
     sessionStorage.removeItem('userData');
     setUserData(null);
-
-    // Trigger user status change event
     window.dispatchEvent(new Event('userStatusChange'));
-
-    // Navigate to home page
     navigate('/');
   };
 
-  // Get user initials from name
   const getUserInitials = () => {
     if (!userData?.name) return 'U';
     const names = userData.name.split(' ');
@@ -98,7 +89,6 @@ const Header = () => {
     return firstInitial + lastInitial || 'U';
   };
 
-  // Financial data reset function
   const handleResetFinancialData = () => {
     if (userData) {
       const financialKey = `financialData_${userData.email}`;
@@ -108,7 +98,6 @@ const Header = () => {
         isNewUser: true
       };
       localStorage.setItem(financialKey, JSON.stringify(zeroData));
-      // Dispatch event to notify other components
       window.dispatchEvent(new CustomEvent('financialDataUpdate', {
         detail: { userEmail: userData.email, data: zeroData }
       }));
@@ -130,27 +119,21 @@ const Header = () => {
             </div>
           </div>
 
-          {/* Navigation Menu */}
           <div className="hidden md:block">
             <div className="ml-10 flex items-baseline space-x-8">
               {location.pathname === '/' ? (
-                // On home page - show section anchors
                 <>
                   <a href="#features" className="text-gray-700 hover:text-blue-500 px-3 py-2 text-sm font-medium transition-colors">{t('nav.features')}</a>
                   <a href="#stats" className="text-gray-700 hover:text-blue-500 px-3 py-2 text-sm font-medium transition-colors">{t('nav.stats')}</a>
                   <a href="#testimonials" className="text-gray-700 hover:text-blue-500 px-3 py-2 text-sm font-medium transition-colors">{t('nav.testimonials')}</a>
                   <a href="#contact" className="text-gray-700 hover:text-blue-500 px-3 py-2 text-sm font-medium transition-colors">{t('nav.contact')}</a>
                 </>
-              ) : (
-                // On other pages - no navigation needed
-                null
-              )}
+              ) : null}
             </div>
           </div>
 
           <div className="hidden md:block">
             <div className="ml-4 flex items-center space-x-4">
-              {/* Compact Language Selector */}
               <div className="flex items-center space-x-1 bg-gray-50 rounded-lg p-1">
                 {[
                   { code: 'en', flag: '🇺🇸', name: 'English' },
@@ -195,7 +178,6 @@ const Header = () => {
                   >
                     <Settings size={18} />
                   </button>
-                  {/* User Avatar - Far Right */}
                   <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-full flex items-center justify-center shadow-lg ring-2 ring-white ml-4">
                     <span className="text-white text-sm font-bold tracking-wide">{getUserInitials()}</span>
                   </div>
@@ -232,21 +214,15 @@ const Header = () => {
         {isMenuOpen && (
           <div className="md:hidden">
             <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t">
-              {/* Navigation Menu */}
               {location.pathname === '/' ? (
-                // On home page - show section anchors
                 <>
                   <a href="#features" className="text-gray-700 hover:text-blue-500 block px-3 py-2 text-base font-medium">{t('nav.features')}</a>
                   <a href="#stats" className="text-gray-700 hover:text-blue-500 block px-3 py-2 text-base font-medium">{t('nav.stats')}</a>
                   <a href="#testimonials" className="text-gray-700 hover:text-blue-500 block px-3 py-2 text-base font-medium">{t('nav.testimonials')}</a>
                   <a href="#contact" className="text-gray-700 hover:text-blue-500 block px-3 py-2 text-base font-medium">{t('nav.contact')}</a>
                 </>
-              ) : (
-                // On other pages - no navigation needed
-                null
-              )}
+              ) : null}
               <div className="border-t pt-4">
-                {/* Mobile Language Selector */}
                 <div className="px-3 py-2 mb-4">
                   <div className="flex items-center justify-center space-x-2 bg-gray-50 rounded-lg p-2">
                     {[
@@ -331,7 +307,6 @@ const Header = () => {
         )}
       </nav>
       
-      {/* Login Modal */}
       {showLogin && (
         <Login 
           onClose={handleCloseModals} 
@@ -339,7 +314,6 @@ const Header = () => {
         />
       )}
       
-      {/* Register Modal */}
       {showRegister && (
         <Register 
           onClose={handleCloseModals} 
@@ -347,17 +321,14 @@ const Header = () => {
         />
       )}
       
-      {/* User Profile Modal */}
       {showUserProfile && userData && (
         <UserProfile 
           userData={userData}
           onClose={() => setShowUserProfile(false)}
           onUserUpdate={(updatedData: {name: string; email: string; displayName?: string}) => {
             setUserData(updatedData);
-            // Update localStorage/sessionStorage with new data
             const storage = localStorage.getItem('userData') ? localStorage : sessionStorage;
             storage.setItem('userData', JSON.stringify(updatedData));
-            // Trigger user status change event
             window.dispatchEvent(new Event('userStatusChange'));
           }}
           onResetFinancialData={handleResetFinancialData}
@@ -367,7 +338,6 @@ const Header = () => {
   );
 };
 
-// Export functions to be used by other components
 export const useAuthModals = () => {
   const [showLogin, setShowLogin] = useState(false);
   const [showRegister, setShowRegister] = useState(false);

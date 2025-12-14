@@ -1,11 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseUrl = (import.meta as any).env.VITE_SUPABASE_URL;
+const supabaseAnonKey = (import.meta as any).env.VITE_SUPABASE_ANON_KEY;
 
 let supabase = null;
 
-// Supabase client'ı güvenli şekilde başlat
+// Initialize Supabase client safely
 try {
   if (supabaseUrl && supabaseAnonKey && 
       supabaseUrl !== 'your-supabase-url' && 

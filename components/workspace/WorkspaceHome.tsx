@@ -44,7 +44,7 @@ interface Activity {
 }
 
 const WorkspaceHome: React.FC = () => {
-  const { t, currency, convertToDisplayCurrency } = useLanguage();
+  const { t, currency } = useLanguage();
   const { user } = useUser();
   const [recentActivities, setRecentActivities] = useState<Activity[]>([]);
   const [financialData, setFinancialData] = useState<UserFinancialData>({
@@ -53,10 +53,18 @@ const WorkspaceHome: React.FC = () => {
     isNewUser: true
   });
 
+  // Get email from either Supabase user or localStorage user
+  const getUserEmail = () => {
+    if (user?.email) return user.email;
+    const localUser = localStorage.getItem('userData');
+    return localUser ? JSON.parse(localUser).email : null;
+  };
+
+  const userEmail = getUserEmail();
+
   useEffect(() => {
-    if (user?.email) {
-      // Load financial data
-      const financialKey = `financialData_${user.email}`;
+    if (userEmail) {
+      const financialKey = `financialData_${userEmail}`;
       const storedFinancialData = localStorage.getItem(financialKey);
       
       if (storedFinancialData) {
@@ -73,7 +81,6 @@ const WorkspaceHome: React.FC = () => {
           }))
         });
       } else {
-        // Generate sample data for new users
         const sampleTransactions: Transaction[] = [
           {
             id: 1,
@@ -130,12 +137,12 @@ const WorkspaceHome: React.FC = () => {
         localStorage.setItem(financialKey, JSON.stringify(newFinancialData));
       }
     }
-  }, [user?.email]);
+  }, [userEmail]);
 
   useEffect(() => {
-    // Load recent activities from localStorage or generate sample data
     const loadActivities = () => {
-      const stored = localStorage.getItem(`activities_${user?.email}`);
+      if (!userEmail) return;
+      const stored = localStorage.getItem(`activities_${userEmail}`);
       if (stored) {
         const activities = JSON.parse(stored);
         setRecentActivities(activities.map((a: any) => ({
@@ -143,14 +150,13 @@ const WorkspaceHome: React.FC = () => {
           timestamp: new Date(a.timestamp)
         })));
       } else {
-        // Generate sample activities
         const sampleActivities: Activity[] = [
           {
             id: '1',
             type: 'template_created',
             title: t('workspace.newTemplateCreated'),
             description: t('workspace.budgetTemplateCreated'),
-            timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
+            timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
             icon: 'fas fa-plus-circle',
             color: 'text-green-600'
           },
@@ -159,7 +165,7 @@ const WorkspaceHome: React.FC = () => {
             type: 'transaction_added',
             title: t('workspace.transactionAdded'),
             description: t('workspace.expenseTracked'),
-            timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000), // 5 hours ago
+            timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000),
             icon: 'fas fa-chart-line',
             color: 'text-blue-600'
           },
@@ -168,20 +174,18 @@ const WorkspaceHome: React.FC = () => {
             type: 'goal_set',
             title: t('workspace.goalSet'),
             description: t('workspace.savingsGoalCreated'),
-            timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
+            timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000),
             icon: 'fas fa-target',
             color: 'text-purple-600'
           }
         ];
         setRecentActivities(sampleActivities);
-        localStorage.setItem(`activities_${user?.email}`, JSON.stringify(sampleActivities));
+        localStorage.setItem(`activities_${userEmail}`, JSON.stringify(sampleActivities));
       }
     };
 
-    if (user?.email) {
-      loadActivities();
-    }
-  }, [user?.email, t]);
+    loadActivities();
+  }, [userEmail, t]);
 
   const addActivity = (activity: Omit<Activity, 'id' | 'timestamp'>) => {
     const newActivity: Activity = {
@@ -190,9 +194,9 @@ const WorkspaceHome: React.FC = () => {
       timestamp: new Date()
     };
     
-    const updatedActivities = [newActivity, ...recentActivities.slice(0, 9)]; // Keep only 10 most recent
+    const updatedActivities = [newActivity, ...recentActivities.slice(0, 9)];
     setRecentActivities(updatedActivities);
-    localStorage.setItem(`activities_${user?.email}`, JSON.stringify(updatedActivities));
+    localStorage.setItem(`activities_${userEmail}`, JSON.stringify(updatedActivities));
   };
 
   const formatTimeAgo = (date: Date) => {
@@ -268,9 +272,6 @@ const WorkspaceHome: React.FC = () => {
     }
   ];
 
-
-
-  // Calculate financial statistics
   const currentMonth = new Date().getMonth();
   const currentYear = new Date().getFullYear();
   
@@ -295,7 +296,6 @@ const WorkspaceHome: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-8 relative">
-      {/* Analytics Dashboard Header */}
       <div className="mb-8">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-8">
           <div>
@@ -314,13 +314,12 @@ const WorkspaceHome: React.FC = () => {
               </span>
               <span className="flex items-center">
                 <i className="fas fa-user mr-2"></i>
-                {user?.firstName} {user?.lastName}
+                {user?.email || 'User'}
               </span>
             </div>
           </div>
         </div>
 
-        {/* Financial Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-4">
@@ -369,7 +368,6 @@ const WorkspaceHome: React.FC = () => {
           </div>
         </div>
 
-        {/* Where You Left Off Section */}
         <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-6 mb-8 text-white">
           <h3 className="text-xl font-semibold mb-4 flex items-center">
             <i className="fas fa-history mr-3"></i>
@@ -405,16 +403,13 @@ const WorkspaceHome: React.FC = () => {
           </div>
         </div>
 
-        {/* Personal Progress Analytics */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          {/* Monthly Progress Chart */}
           <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <h3 className="text-lg font-semibold mb-4 flex items-center">
               <i className="fas fa-chart-area text-green-500 mr-2"></i>
               {t('workspace.monthlyProgress')}
             </h3>
             <div className="space-y-4">
-              {/* Savings Progress */}
               <div>
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-sm font-medium text-gray-700">{t('workspace.savingsProgress')}</span>
@@ -428,7 +423,6 @@ const WorkspaceHome: React.FC = () => {
                 </div>
               </div>
               
-              {/* Goal Achievement */}
               <div>
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-sm font-medium text-gray-700">{t('workspace.goalAchievement')}</span>
@@ -442,7 +436,6 @@ const WorkspaceHome: React.FC = () => {
                 </div>
               </div>
               
-              {/* Budget Adherence */}
               <div>
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-sm font-medium text-gray-700">{t('workspace.budgetAdherence')}</span>
@@ -454,12 +447,11 @@ const WorkspaceHome: React.FC = () => {
               </div>
             </div>
             
-            {/* Weekly Insights */}
             <div className="mt-6 pt-6 border-t border-gray-200">
               <h4 className="font-medium text-gray-900 mb-3">{t('workspace.weeklyInsights')}</h4>
               <div className="grid grid-cols-7 gap-2">
                 {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, index) => {
-                  const height = Math.random() * 40 + 20; // Random height for demo
+                  const height = Math.random() * 40 + 20;
                   const isToday = index === new Date().getDay() - 1;
                   return (
                     <div key={day} className="text-center">
@@ -481,9 +473,7 @@ const WorkspaceHome: React.FC = () => {
             </div>
           </div>
           
-          {/* Personal Statistics */}
           <div className="space-y-6">
-            {/* Achievement Badges */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
               <h3 className="text-lg font-semibold mb-4 flex items-center">
                 <i className="fas fa-trophy text-yellow-500 mr-2"></i>
@@ -520,7 +510,6 @@ const WorkspaceHome: React.FC = () => {
               </div>
             </div>
             
-            {/* Quick Stats */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
               <h3 className="text-lg font-semibold mb-4 flex items-center">
                 <i className="fas fa-analytics text-purple-500 mr-2"></i>
@@ -548,9 +537,7 @@ const WorkspaceHome: React.FC = () => {
           </div>
         </div>
 
-
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          {/* Recent Transactions */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <h3 className="text-lg font-semibold mb-4 flex items-center">
               <i className="fas fa-list text-blue-500 mr-2"></i>
@@ -582,7 +569,6 @@ const WorkspaceHome: React.FC = () => {
             </div>
           </div>
 
-          {/* Savings Goals Progress */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <h3 className="text-lg font-semibold mb-4 flex items-center">
               <i className="fas fa-bullseye text-purple-500 mr-2"></i>
@@ -625,11 +611,6 @@ const WorkspaceHome: React.FC = () => {
         </div>
       </div>
 
-
-
-
-
-      {/* Quick Actions */}
       <div className="mb-12">
         <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
           <i className="fas fa-bolt text-yellow-500 mr-3"></i>
@@ -653,7 +634,6 @@ const WorkspaceHome: React.FC = () => {
         </div>
       </div>
 
-      {/* Recent Activities */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
           <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
@@ -689,7 +669,6 @@ const WorkspaceHome: React.FC = () => {
           </div>
         </div>
 
-        {/* Stats Panel */}
         <div>
           <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
             <i className="fas fa-chart-bar text-green-500 mr-3"></i>
@@ -727,9 +706,7 @@ const WorkspaceHome: React.FC = () => {
         </div>
       </div>
 
-      {/* Homepage Content Sections */}
       <div className="mt-16 space-y-16">
-        {/* Hero Section */}
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
           <div className="bg-gradient-to-r from-blue-500 to-emerald-400 p-6">
             <h2 className="text-2xl font-bold text-white mb-2">{t('workspace.heroSection')}</h2>
@@ -740,7 +717,6 @@ const WorkspaceHome: React.FC = () => {
           </div>
         </div>
 
-        {/* Features Section */}
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
           <div className="bg-gradient-to-r from-green-500 to-blue-500 p-6">
             <h2 className="text-2xl font-bold text-white mb-2">{t('workspace.featuresSection')}</h2>
@@ -751,7 +727,6 @@ const WorkspaceHome: React.FC = () => {
           </div>
         </div>
 
-        {/* Stats Section */}
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
           <div className="bg-gradient-to-r from-purple-500 to-pink-500 p-6">
             <h2 className="text-2xl font-bold text-white mb-2">{t('workspace.statsSection')}</h2>
@@ -762,7 +737,6 @@ const WorkspaceHome: React.FC = () => {
           </div>
         </div>
 
-        {/* Partnership Section */}
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
           <div className="bg-gradient-to-r from-indigo-500 to-purple-500 p-6">
             <h2 className="text-2xl font-bold text-white mb-2">{t('workspace.partnershipSection')}</h2>
@@ -773,7 +747,6 @@ const WorkspaceHome: React.FC = () => {
           </div>
         </div>
 
-        {/* Testimonials Section */}
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
           <div className="bg-gradient-to-r from-orange-500 to-red-500 p-6">
             <h2 className="text-2xl font-bold text-white mb-2">{t('workspace.testimonialsSection')}</h2>
@@ -784,7 +757,6 @@ const WorkspaceHome: React.FC = () => {
           </div>
         </div>
 
-        {/* CTA Section */}
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
           <div className="bg-gradient-to-r from-teal-500 to-green-500 p-6">
             <h2 className="text-2xl font-bold text-white mb-2">{t('workspace.ctaSection')}</h2>

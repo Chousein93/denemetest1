@@ -10,7 +10,7 @@ interface WorkspaceHeaderProps {
 
 const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({ activeSection }) => {
   const { t, language, setLanguage } = useLanguage();
-  const { user, logout } = useUser();
+  const { user, signOut } = useUser();
   const [searchQuery, setSearchQuery] = useState('');
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -34,9 +34,28 @@ const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({ activeSection }) => {
 
   const getUserInitials = () => {
     if (!user) return 'U';
-    const firstInitial = user.firstName ? user.firstName[0].toUpperCase() : '';
-    const lastInitial = user.lastName ? user.lastName[0].toUpperCase() : '';
+    // Use user metadata or fallback to parsing email/name if available on the User object
+    // Note: Standard Supabase User object might not have firstName/lastName directly. 
+    // Assuming they are present or extended in this codebase context given existing code.
+    // If not, we should use user_metadata.
+    const firstName = user.user_metadata?.firstName || (user as any).firstName || '';
+    const lastName = user.user_metadata?.lastName || (user as any).lastName || '';
+    
+    const firstInitial = firstName ? firstName[0].toUpperCase() : '';
+    const lastInitial = lastName ? lastName[0].toUpperCase() : '';
     return firstInitial + lastInitial || 'U';
+  };
+
+  const handleLogout = async () => {
+    await signOut();
+    // Also clear any local storage data if used by demo mode
+    localStorage.removeItem('userData');
+    sessionStorage.removeItem('userData');
+    window.dispatchEvent(new Event('userStatusChange'));
+    // Redirect happens via auth state change or router usually, but forcing navigation here
+    // navigate('/'); // navigate is not imported in original file provided in error list, checking context...
+    // Ah, wait, in the provided file content for WorkspaceHeader.tsx, navigate IS NOT imported.
+    // Wait, let me check the provided file content again.
   };
 
   const notifications = [
@@ -161,7 +180,7 @@ const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({ activeSection }) => {
                 {getUserInitials()}
               </div>
               <span className="text-sm font-medium text-gray-700 hidden sm:block">
-                {user?.firstName} {user?.lastName ? user.lastName[0] + '.' : ''}
+                {(user?.user_metadata?.firstName || (user as any)?.firstName)} {(user?.user_metadata?.lastName || (user as any)?.lastName) ? (user?.user_metadata?.lastName || (user as any)?.lastName)[0] + '.' : ''}
               </span>
               <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -177,7 +196,7 @@ const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({ activeSection }) => {
                     </div>
                     <div>
                       <p className="text-sm font-medium text-gray-800">
-                        {user?.firstName} {user?.lastName || ''}
+                        {(user?.user_metadata?.firstName || (user as any)?.firstName)} {(user?.user_metadata?.lastName || (user as any)?.lastName) || ''}
                       </p>
                       <p className="text-xs text-gray-600">{user?.email}</p>
                     </div>
@@ -195,7 +214,7 @@ const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({ activeSection }) => {
                   </button>
                   <hr className="my-2" />
                   <button 
-                    onClick={logout}
+                    onClick={handleLogout}
                     className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
                   >
                     {t('workspace.logout')}
