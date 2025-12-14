@@ -1,0 +1,9 @@
+{
+  "name": "FinGemini Dashboard",
+  "description": "A comprehensive AI-powered finance dashboard with multi-language support, smart budgeting, and generative AI features.",
+  "requestFramePermissions": [
+    "microphone",
+    "camera",
+    "geolocation"
+  ]
+}
